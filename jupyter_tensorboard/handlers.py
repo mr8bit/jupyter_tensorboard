@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from tornado import web
-from tornado.wsgi import WSGIContainer
+from tornado import web, gen
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from tornado.httputil import HTTPHeaders, parse_response_start_line
 from notebook.base.handlers import IPythonHandler
 from notebook.utils import url_path_join as ujoin
 from notebook.base.handlers import path_regex
@@ -46,9 +47,11 @@ def load_jupyter_server_extension(nb_app):
     web_app.add_handlers('.*$', handlers)
     nb_app.log.info("jupyter_tensorboard extension loaded.")
 
+fetch = AsyncHTTPClient().fetch
 
 class TensorboardHandler(IPythonHandler):
 
+    @gen.coroutine
     @web.authenticated
     def get(self, name, path):
 
@@ -59,17 +62,48 @@ class TensorboardHandler(IPythonHandler):
             self.redirect(uri, permanent=True)
             return
 
-        self.request.path = (
-            path if self.request.query
+        path = (path if self.request.query is None
             else "%s?%s" % (path, self.request.query))
 
         manager = self.settings["tensorboard_manager"]
         if name in manager:
-            tb_app = manager[name].tb_app
-            WSGIContainer(tb_app)(self.request)
+            tb_port = manager[name].port
+
+            request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
+                 headers = self.request.headers,
+                 header_callback = self._handle_headers,
+                 streaming_callback = self._handle_chunk,
+                 decompress_response = False)
+
+            response = yield fetch(request)
+
+            #response.rethrow()
+
+            self.finish()
+
         else:
             raise web.HTTPError(404)
 
+    def _handle_headers(self, headers):
+        if hasattr(self, "_theaders"):
+            if headers == "\r\n":
+                for kv in self._theaders.get_all():
+                    self.log.info("%s:%s" % kv)
+                    self.add_header(kv[0], kv[1])
+                del self._theaders
+                return
+            try:
+                self._theaders.parse_line(headers)
+            except:
+                return
+        else:
+            r = parse_response_start_line(headers)
+            self.set_status(r.code, r.reason)
+            self._theaders = HTTPHeaders()
+
+    def _handle_chunk(self, chunk):
+        self.write(chunk)
+        self.flush()
 
 class TensorboardErrorHandler(IPythonHandler):
     pass
