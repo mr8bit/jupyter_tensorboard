@@ -8,6 +8,7 @@ from notebook.utils import url_path_join as ujoin
 from notebook.base.handlers import path_regex
 
 notebook_dir = None
+nb_app_logger = None
 
 
 def load_jupyter_server_extension(nb_app):
@@ -15,6 +16,9 @@ def load_jupyter_server_extension(nb_app):
     global notebook_dir
     # notebook_dir should be root_dir of contents_manager
     notebook_dir = nb_app.contents_manager.root_dir
+
+    global nb_app_logger
+    nb_app_logger = nb_app.log
 
     web_app = nb_app.web_app
     base_url = web_app.settings['base_url']
