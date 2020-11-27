@@ -3,7 +3,8 @@
 import json
 import os
 
-from tornado import web
+from tornado import web, gen
+from tornado.ioloop import IOLoop
 from notebook.base.handlers import APIHandler
 
 from .handlers import notebook_dir
@@ -25,12 +26,13 @@ class TbRootHandler(APIHandler):
             {
                 'name': entry.name,
                 'logdir': _trim_notebook_dir(entry.logdir),
-                "reload_time": entry.thread.reload_time,
+                "reload_time": entry.reload_interval,
             } for entry in
             self.settings["tensorboard_manager"].values()
         ]
         self.finish(json.dumps(terms))
 
+    @gen.coroutine
     @web.authenticated
     def post(self):
         data = self.get_json_body()
@@ -39,10 +41,13 @@ class TbRootHandler(APIHandler):
             self.settings["tensorboard_manager"]
             .new_instance(data["logdir"], reload_interval=reload_interval)
         )
+
+        yield gen.sleep(2)
+
         self.finish(json.dumps({
                 'name': entry.name,
                 'logdir':  _trim_notebook_dir(entry.logdir),
-                'reload_time': entry.thread.reload_time}))
+                'reload_time': entry.reload_interval}))
 
 
 class TbInstanceHandler(APIHandler):
@@ -57,7 +62,7 @@ class TbInstanceHandler(APIHandler):
             self.finish(json.dumps({
                 'name': entry.name,
                 'logdir':  _trim_notebook_dir(entry.logdir),
-                'reload_time': entry.thread.reload_time}))
+                'reload_time': entry.reload_interval}))
         else:
             raise web.HTTPError(
                 404, "TensorBoard instance not found: %r" % name)
