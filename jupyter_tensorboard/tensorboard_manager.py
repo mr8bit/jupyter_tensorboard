@@ -10,7 +10,7 @@ from .handlers import nb_app_logger
 
 import subprocess
 
-import importlib
+import pkg_resources
 
 import atexit
 
@@ -33,10 +33,8 @@ def get_free_tcp_port():
 
 def create_tb_app(logdir, reload_interval, purge_orphaned_data):
     try:
-        import tensorboard
-        importlib.reload(tensorboard)
-        tensorboard_version = tensorboard.__version__
-    except ImportError:
+        tensorboard_version = pkg_resources.get_distribution('tensorboard').version
+    except pkg_resources.DistributionNotFound:
         nb_app_logger.error("import tensorboard failed, check tensorboard installation")
 
     port = get_free_tcp_port()
