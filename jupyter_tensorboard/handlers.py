@@ -22,7 +22,7 @@ def load_jupyter_server_extension(nb_app):
     try:
         from .tensorboard_manager import manager
     except ImportError:
-        nb_app.log.info("import tensorboard error, check tensorflow install")
+        nb_app.log.error("import tensorboard error, check tensorflow install")
         handlers = [
             (ujoin(
                 base_url, r"/tensorboard.*"),
