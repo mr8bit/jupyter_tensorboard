@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from tornado import web, gen
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
 from tornado.httputil import HTTPHeaders, parse_response_start_line
 from notebook.base.handlers import IPythonHandler
 from notebook.utils import url_path_join as ujoin
@@ -79,8 +79,11 @@ class TensorboardHandler(IPythonHandler):
                  header_callback = self._handle_headers,
                  streaming_callback = self._handle_chunk,
                  decompress_response = False)
-
-            response = yield fetch(request)
+            try:
+                response = yield fetch(request)
+            except HTTPError as e:
+                nb_app_logger.warning(e)
+                raise web.HTTPError(500)
 
             #response.rethrow()
 
