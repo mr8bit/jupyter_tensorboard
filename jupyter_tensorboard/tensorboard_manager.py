@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import time
 import itertools
+import urllib
 from collections import namedtuple
-import logging
 
-import six
+from .handlers import nb_app_logger
 
 import subprocess
 
+import importlib
+
 import atexit
+
 
 def cleanup_instances():
     manager.terminate_all()
 
+
 atexit.register(cleanup_instances)
+
 
 def get_free_tcp_port():
     import socket
@@ -28,23 +32,52 @@ def get_free_tcp_port():
 
 
 def create_tb_app(logdir, reload_interval, purge_orphaned_data):
+    try:
+        import tensorboard
+        importlib.reload(tensorboard)
+        tensorboard_version = tensorboard.__version__
+    except ImportError:
+        nb_app_logger.error("import tensorboard failed, check tensorboard installation")
+
     port = get_free_tcp_port()
     argv = [
-                "tensorboard",
-                "--port", str(port),
-                "--logdir", logdir,
-                "--reload_interval", str(reload_interval),
-                "--purge_orphaned_data", str(purge_orphaned_data),
-                "--debugger_port", str(get_free_tcp_port()),
-           ]
+        "tensorboard",
+        "--port", str(port),
+        "--logdir", logdir,
+        "--reload_interval", str(reload_interval),
+        "--purge_orphaned_data", str(purge_orphaned_data),
+    ]
+    if tensorboard_version >= "2.4.0":
+        argv.insert(1, "serve")
+    else:
+        argv.extend(["--debugger_port", str(get_free_tcp_port())]),
+
+    nb_app_logger.info("Start tensorboard with: %s" % ' '.join(argv))
     tb_proc = subprocess.Popen(argv)
+
+    elpased = 0
+    while elpased < 60:
+        elpased += 1
+        time.sleep(1)
+        try:
+            urllib.request.urlopen("http://127.0.0.1:%d/" % port)
+        except urllib.error.URLError as e:
+            nb_app_logger.info("Waiting for tensorboard: %s" % e.reason)
+            continue
+        except urllib.error.HTTPError as e:
+            nb_app_logger.info("Waiting for tensorboard: Tensorboard status code is %s, entering sleep for 1 second" % e.code)
+            continue
+        nb_app_logger.info("Waiting for tensorboard: Tensorboard status code is 200, so stop waiting")
+        break
 
     return tb_proc, port
 
-from .handlers import notebook_dir   # noqa
+
+from .handlers import notebook_dir  # noqa
 
 TensorBoardInstance = namedtuple(
     'TensorBoardInstance', ['name', 'logdir', 'process', 'port', 'reload_interval'])
+
 
 class TensorboardManger(dict):
 
@@ -93,11 +126,12 @@ class TensorboardManger(dict):
         else:
             raise Exception("There's no tensorboard instance named %s" % name)
 
-    def terminate_all(self, force = True):
+    def terminate_all(self, force=True):
         for i in list(self.keys()):
             try:
                 self.terminate(i, force)
             except:
                 pass
+
 
 manager = TensorboardManger()
