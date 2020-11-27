@@ -89,7 +89,7 @@ class TensorboardHandler(IPythonHandler):
         if hasattr(self, "_theaders"):
             if headers == "\r\n":
                 for kv in self._theaders.get_all():
-                    self.log.info("%s:%s" % kv)
+                    self.log.debug("%s:%s" % kv)
                     self.add_header(kv[0], kv[1])
                 del self._theaders
                 return
