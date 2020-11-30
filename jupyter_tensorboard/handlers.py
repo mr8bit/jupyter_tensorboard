@@ -2,7 +2,11 @@
 
 from tornado import web, gen
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
-from tornado.httputil import HTTPHeaders, parse_response_start_line
+from tornado.httputil import (
+    HTTPHeaders,
+    HTTPInputError,
+    parse_response_start_line
+)
 from notebook.base.handlers import IPythonHandler
 from notebook.utils import url_path_join as ujoin
 from notebook.base.handlers import path_regex
@@ -51,7 +55,9 @@ def load_jupyter_server_extension(nb_app):
     web_app.add_handlers('.*$', handlers)
     nb_app.log.info("jupyter_tensorboard extension loaded.")
 
+
 fetch = AsyncHTTPClient().fetch
+
 
 class TensorboardHandler(IPythonHandler):
 
@@ -67,25 +73,24 @@ class TensorboardHandler(IPythonHandler):
             return
 
         path = (path if self.request.query is None
-            else "%s?%s" % (path, self.request.query))
-
+                else "%s?%s" % (path, self.request.query))
 
         manager = self.settings["tensorboard_manager"]
         if name in manager:
             tb_port = manager[name].port
 
             request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
-                 headers = self.request.headers,
-                 header_callback = self._handle_headers,
-                 streaming_callback = self._handle_chunk,
-                 decompress_response = False)
+                                  headers=self.request.headers,
+                                  header_callback=self._handle_headers,
+                                  streaming_callback=self._handle_chunk,
+                                  decompress_response=False)
             try:
-                response = yield fetch(request)
+                yield fetch(request)
             except HTTPError as e:
                 nb_app_logger.warning(e)
                 raise web.HTTPError(500)
 
-            #response.rethrow()
+            # response.rethrow()
 
             self.finish()
 
@@ -102,7 +107,7 @@ class TensorboardHandler(IPythonHandler):
                 return
             try:
                 self._theaders.parse_line(headers)
-            except:
+            except (HTTPInputError, IndexError, TypeError):
                 return
         else:
             r = parse_response_start_line(headers)
@@ -112,6 +117,7 @@ class TensorboardHandler(IPythonHandler):
     def _handle_chunk(self, chunk):
         self.write(chunk)
         self.flush()
+
 
 class TensorboardErrorHandler(IPythonHandler):
     pass

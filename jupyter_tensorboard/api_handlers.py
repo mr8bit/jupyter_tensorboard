@@ -4,7 +4,6 @@ import json
 import os
 
 from tornado import web, gen
-from tornado.ioloop import IOLoop
 from notebook.base.handlers import APIHandler
 
 from .handlers import notebook_dir

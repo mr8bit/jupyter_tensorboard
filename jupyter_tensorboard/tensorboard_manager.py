@@ -33,9 +33,11 @@ def get_free_tcp_port():
 
 def create_tb_app(logdir, reload_interval, purge_orphaned_data):
     try:
-        tensorboard_version = pkg_resources.get_distribution('tensorboard').version
+        _ = pkg_resources.get_distribution('tensorboard')
+        tensorboard_version = _.version
     except pkg_resources.DistributionNotFound:
-        nb_app_logger.error("import tensorboard failed, check tensorboard installation")
+        nb_app_logger.error("import tensorboard failed, "
+                            "check tensorboard installation")
 
     port = get_free_tcp_port()
     argv = [
@@ -63,9 +65,13 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
             nb_app_logger.info("Waiting for tensorboard: %s" % e.reason)
             continue
         except urllib.error.HTTPError as e:
-            nb_app_logger.info("Waiting for tensorboard: Tensorboard status code is %s, entering sleep for 1 second" % e.code)
+            nb_app_logger.info("Waiting for tensorboard: "
+                               "Tensorboard status code is %s, "
+                               "entering sleep for 1 second" %
+                               e.code)
             continue
-        nb_app_logger.info("Waiting for tensorboard: Tensorboard status code is 200, so stop waiting")
+        nb_app_logger.info("Waiting for tensorboard: Tensorboard status code "
+                           "is 200, so stop waiting")
         break
 
     return tb_proc, port
@@ -74,7 +80,9 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
 from .handlers import notebook_dir  # noqa
 
 TensorBoardInstance = namedtuple(
-    'TensorBoardInstance', ['name', 'logdir', 'process', 'port', 'reload_interval'])
+    'TensorBoardInstance',
+    ['name', 'logdir', 'process', 'port', 'reload_interval']
+)
 
 
 class TensorboardManger(dict):
@@ -105,7 +113,13 @@ class TensorboardManger(dict):
 
     def add_instance(self, logdir, process, port, reload_interval):
         name = self._next_available_name()
-        instance = TensorBoardInstance(name, logdir, process, port, reload_interval)
+        instance = TensorBoardInstance(
+            name,
+            logdir,
+            process,
+            port,
+            reload_interval
+        )
         self[name] = instance
         self._logdir_dict[logdir] = instance
 
@@ -128,7 +142,7 @@ class TensorboardManger(dict):
         for i in list(self.keys()):
             try:
                 self.terminate(i, force)
-            except:
+            except Exception:
                 pass
 
 

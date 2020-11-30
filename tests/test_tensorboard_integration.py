@@ -83,13 +83,17 @@ class TestJupyterExtension(AsyncHTTPTestCase):
             method='POST',
             body=json.dumps(content),
             headers=content_type, raise_error=False)
-        assert response.code is 200
+        assert response.code == 200
 
-        response = yield self.http_client.fetch(self.get_url('/api/tensorboard'))
+        response = yield self.http_client.fetch(
+            self.get_url('/api/tensorboard')
+        )
         instances = json.loads(response.body.decode())
         assert len(instances) > 0
 
-        response = yield self.http_client.fetch(self.get_url('/api/tensorboard/1'))
+        response = yield self.http_client.fetch(
+            self.get_url('/api/tensorboard/1')
+        )
         instance = json.loads(response.body.decode())
         instance2 = None
         for inst in instances:
@@ -97,11 +101,17 @@ class TestJupyterExtension(AsyncHTTPTestCase):
                 instance2 = inst
         assert instance == instance2
 
-        response = yield self.http_client.fetch(self.get_url('/tensorboard/1/'))
+        response = yield self.http_client.fetch(
+            self.get_url('/tensorboard/1/')
+        )
         assert response.code == 200
 
-        response = yield self.http_client.fetch(self.get_url('/tensorboard/1/data/plugins_listing'))
+        response = yield self.http_client.fetch(
+            self.get_url('/tensorboard/1/data/plugins_listing')
+        )
         plugins_list = json.loads(response.body.decode())
+        assert "graphs" in plugins_list
+        assert "scalars" in plugins_list
         assert plugins_list["graphs"]
         assert plugins_list["scalars"]
 
@@ -111,7 +121,9 @@ class TestJupyterExtension(AsyncHTTPTestCase):
         )
         assert response.code == 204
 
-        response = yield self.http_client.fetch(self.get_url(('/api/tensorboard/1')), raise_error=False)
+        response = yield self.http_client.fetch(
+            self.get_url(('/api/tensorboard/1')), raise_error=False
+        )
         error_msg = json.loads(response.body.decode())
         assert error_msg["message"].startswith(
             "TensorBoard instance not found:")
