@@ -47,6 +47,15 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
         "--reload_interval", str(reload_interval),
         "--purge_orphaned_data", str(purge_orphaned_data),
     ]
+    if not os.environ.get("JUPYTER_TENSORBOARD_DISABLE_BINDALL", False):
+        if tensorboard_version < "2.0.0":
+            argv.extend(["--host", "0.0.0.0"])
+        else:
+            argv.extend(["--bind_all"])
+
+    if tensorboard_version >= "2.3.0":
+        argv.extend(["--reload_multifile", "True"])
+
     if tensorboard_version >= "2.4.0":
         argv.insert(1, "serve")
     else:
