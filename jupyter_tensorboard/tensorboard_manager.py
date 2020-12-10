@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import time
 import itertools
@@ -11,6 +10,7 @@ from .handlers import nb_app_logger
 import subprocess
 
 import pkg_resources
+import importlib
 
 import atexit
 
@@ -33,6 +33,7 @@ def get_free_tcp_port():
 
 def create_tb_app(logdir, reload_interval, purge_orphaned_data):
     try:
+        importlib.reload(pkg_resources)
         _ = pkg_resources.get_distribution('tensorboard')
         tensorboard_version = _.version
     except pkg_resources.DistributionNotFound:
