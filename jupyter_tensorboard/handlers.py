@@ -86,9 +86,11 @@ class TensorboardHandler(IPythonHandler):
                                   decompress_response=False)
             try:
                 yield fetch(request)
-            except HTTPError as e:
+            except (HTTPError, ConnectionRefusedError) as e:
                 nb_app_logger.warning(e)
-                raise web.HTTPError(500)
+                log_message = "Tensorboard process '%s' didn't respond, " \
+                              "you can shutdown it down and start new" % name
+                raise web.HTTPError(500, log_message)
 
             # response.rethrow()
 
