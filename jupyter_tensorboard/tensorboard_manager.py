@@ -139,9 +139,9 @@ class TensorboardManger(dict):
             if instance.process is not None:
                 try:
                     if force:
-                        instance.process.terminate()
-                    else:
                         instance.process.kill()
+                    else:
+                        instance.process.terminate()
                     instance.process.wait(5)
                 except subprocess.TimeoutExpired:
                     pass
