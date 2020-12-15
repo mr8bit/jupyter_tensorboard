@@ -137,12 +137,14 @@ class TensorboardManger(dict):
         if name in self:
             instance = self[name]
             if instance.process is not None:
-                instance.process.terminate()
                 try:
+                    if force:
+                        instance.process.terminate()
+                    else:
+                        instance.process.kill()
                     instance.process.wait(5)
                 except subprocess.TimeoutExpired:
-                    if force:
-                        instance.process.kill()
+                    pass
 
             del self[name], self._logdir_dict[instance.logdir]
         else:
