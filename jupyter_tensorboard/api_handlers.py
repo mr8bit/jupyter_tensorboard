@@ -37,7 +37,7 @@ class TbRootHandler(APIHandler):
         data = self.get_json_body()
         reload_interval = data.get("reload_interval", None)
         entry = (
-            self.settings["tensorboard_manager"]
+            yield self.settings["tensorboard_manager"]
             .new_instance(data["logdir"], reload_interval=reload_interval)
         )
 

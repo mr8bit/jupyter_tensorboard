@@ -5,6 +5,9 @@ import itertools
 import urllib
 from collections import namedtuple
 
+from tornado import gen, httpclient
+from tornado.httpclient import HTTPError
+
 from .handlers import nb_app_logger
 
 import subprocess
@@ -31,7 +34,10 @@ def get_free_tcp_port():
     return port
 
 
+@gen.coroutine
 def create_tb_app(logdir, reload_interval, purge_orphaned_data):
+    client = httpclient.AsyncHTTPClient()
+
     try:
         importlib.reload(pkg_resources)
         _ = pkg_resources.get_distribution('tensorboard')
@@ -68,13 +74,14 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
     elpased = 0
     while elpased < 60:
         elpased += 1
-        time.sleep(1)
+        yield gen.sleep(1)
         try:
-            urllib.request.urlopen("http://127.0.0.1:%d/" % port)
-        except urllib.error.URLError as e:
-            nb_app_logger.info("Waiting for tensorboard: %s" % e.reason)
+            req = httpclient.HTTPRequest("http://127.0.0.1:%d/" % port)
+            yield client.fetch(req)
+        except ConnectionRefusedError as e:
+            nb_app_logger.info("Waiting for tensorboard: %s" % e.strerror)
             continue
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             nb_app_logger.info("Waiting for tensorboard: "
                                "Tensorboard status code is %s, "
                                "entering sleep for 1 second" %
@@ -106,6 +113,7 @@ class TensorboardManger(dict):
             if name not in self:
                 return name
 
+    @gen.coroutine
     def new_instance(self, logdir, reload_interval):
         if not os.path.isabs(logdir) and notebook_dir:
             logdir = os.path.join(notebook_dir, logdir)
@@ -113,7 +121,7 @@ class TensorboardManger(dict):
         if logdir not in self._logdir_dict:
             purge_orphaned_data = True
             reload_interval = reload_interval or 30
-            pid, port = create_tb_app(
+            pid, port = yield create_tb_app(
                 logdir=logdir, reload_interval=reload_interval,
                 purge_orphaned_data=purge_orphaned_data)
 
