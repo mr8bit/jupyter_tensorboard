@@ -63,10 +63,10 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
             argv.extend(["--bind_all"])
 
     if tensorboard_version >= "2.3.0":
-        argv.extend(["--reload_multifile", "True"])
+        argv.extend(["--reload_multifile", "true"])
 
     if tensorboard_version >= "2.12.0":
-        argv.extend(["--load_fast", "False"])
+        argv.extend(["--load_fast", "false"])
 
     nb_app_logger.info("Start tensorboard with: %s" % ' '.join(argv))
     tb_proc = subprocess.Popen(argv)
