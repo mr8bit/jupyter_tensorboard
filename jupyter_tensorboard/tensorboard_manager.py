@@ -64,9 +64,6 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
     if tensorboard_version >= "2.3.0":
         argv.extend(["--reload_multifile", "True"])
 
-    if tensorboard_version >= "2.4.0":
-        argv.insert(1, "serve")
-
     nb_app_logger.info("Start tensorboard with: %s" % ' '.join(argv))
     tb_proc = subprocess.Popen(argv)
 
