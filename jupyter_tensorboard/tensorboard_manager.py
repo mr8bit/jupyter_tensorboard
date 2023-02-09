@@ -42,6 +42,7 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
         importlib.reload(pkg_resources)
         _ = pkg_resources.get_distribution('tensorboard')
         tensorboard_version = _.version
+        print("tensorboard version user",tensorboard_version)
     except pkg_resources.DistributionNotFound:
         nb_app_logger.error("import tensorboard failed, "
                             "check tensorboard installation")
@@ -65,8 +66,6 @@ def create_tb_app(logdir, reload_interval, purge_orphaned_data):
 
     if tensorboard_version >= "2.4.0":
         argv.insert(1, "serve")
-    else:
-        argv.extend(["--debugger_port", str(get_free_tcp_port())]),
 
     nb_app_logger.info("Start tensorboard with: %s" % ' '.join(argv))
     tb_proc = subprocess.Popen(argv)
