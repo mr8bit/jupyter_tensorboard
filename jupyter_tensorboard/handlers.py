@@ -119,11 +119,10 @@ class TensorboardHandler(IPythonHandler):
     def _handle_chunk(self, chunk):
         self.write(chunk)
         self.flush()
-
-    @gen.coroutine
+    
     @web.authenticated
     def post(self, name, path):
-        print("post method",name, path)
+        print("post method post",name, path)
         return self.get(name, path)
 
 
