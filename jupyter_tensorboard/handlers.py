@@ -74,6 +74,7 @@ class TensorboardHandler(IPythonHandler):
 
         path = (path if self.request.query is None
                 else "%s?%s" % (path, self.request.query))
+        print("Tensorboard path: ",path)
 
         manager = self.settings["tensorboard_manager"]
         if name in manager:
