@@ -74,14 +74,10 @@ class TensorboardHandler(IPythonHandler):
 
         path = (path if self.request.query is None
                 else "%s?%s" % (path, self.request.query))
-        print("Tensorboard path: ",path)
 
         manager = self.settings["tensorboard_manager"]
         if name in manager:
-            print("Tensorboard name", name)
             tb_port = manager[name].port
-            print("requests",self.request)
-            print("method",self.request.method)
             if self.request.method in ["POST"]:
                 request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
                                     headers=self.request.headers,
@@ -134,7 +130,6 @@ class TensorboardHandler(IPythonHandler):
     
     @web.authenticated
     def post(self, name, path):
-        print("post method post",name, path)
         return self.get(name, path)
 
 
