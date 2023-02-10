@@ -61,7 +61,6 @@ fetch = AsyncHTTPClient().fetch
 
 class TensorboardHandler(IPythonHandler):
 
-    @gen.coroutine
     @web.authenticated
     def get(self, name, path):
 
