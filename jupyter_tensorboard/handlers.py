@@ -82,12 +82,20 @@ class TensorboardHandler(IPythonHandler):
             tb_port = manager[name].port
             print("requests",self.request)
             print("method",self.request.method)
-            request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
-                                  headers=self.request.headers,
-                                  method=self.request.method,
-                                  header_callback=self._handle_headers,
-                                  streaming_callback=self._handle_chunk,
-                                  decompress_response=False)
+            if self.request.method in ["POST"]:
+                request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
+                                    headers=self.request.headers,
+                                    method=self.request.method,
+                                    body=self.request.body,
+                                    header_callback=self._handle_headers,
+                                    streaming_callback=self._handle_chunk,
+                                    decompress_response=False)
+            else:
+                request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
+                                    headers=self.request.headers,
+                                    header_callback=self._handle_headers,
+                                    streaming_callback=self._handle_chunk,
+                                    decompress_response=False)
             try:
                 yield fetch(request)
             except (HTTPError, ConnectionRefusedError) as e:
