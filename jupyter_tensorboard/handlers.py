@@ -120,6 +120,10 @@ class TensorboardHandler(IPythonHandler):
     def _handle_chunk(self, chunk):
         self.write(chunk)
         self.flush()
+    
+    @web.authenticated
+    def post(self, name, path):
+        return self.get(name, path)
 
 
 class TensorboardErrorHandler(IPythonHandler):
