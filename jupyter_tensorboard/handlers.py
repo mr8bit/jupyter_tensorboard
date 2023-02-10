@@ -61,6 +61,7 @@ fetch = AsyncHTTPClient().fetch
 
 class TensorboardHandler(IPythonHandler):
 
+    @gen.coroutine
     @web.authenticated
     def get(self, name, path):
 
@@ -80,6 +81,7 @@ class TensorboardHandler(IPythonHandler):
             tb_port = manager[name].port
 
             request = HTTPRequest("http://127.0.0.1:%d%s" % (tb_port, path),
+                                  method=self.request.method,
                                   header_callback=self._handle_headers,
                                   streaming_callback=self._handle_chunk,
                                   decompress_response=False)
