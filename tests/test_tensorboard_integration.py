@@ -4,7 +4,8 @@ import sys
 import time
 import logging
 import json
-
+import binascii
+import os
 import pytest
 from tornado.testing import AsyncHTTPTestCase, gen_test
 
@@ -46,7 +47,6 @@ def tf_logs(tmpdir_factory):
 
     return log_dir
 
-
 @pytest.fixture(scope="session")
 def nb_app():
     sys.argv = ["--port=6005", "--ip=127.0.0.1", "--no-browser", "--debug"]
@@ -61,6 +61,21 @@ def nb_app():
     app.initialize()
     return app.web_app
 
+def encode_multipart_formdata(fields):
+     boundary = binascii.hexlify(os.urandom(16)).decode('ascii')
+
+     body = (
+         "".join("--%s\r\n"
+                 "Content-Disposition: form-data; name=\"%s\"\r\n"
+                 "\r\n"
+                 "%s\r\n" % (boundary, field, value)
+                 for field, value in fields.items()) +
+         "--%s--\r\n" % boundary
+     )
+
+     content_type = "multipart/form-data; boundary=%s" % boundary
+
+     return body, content_type
 
 class TestJupyterExtension(AsyncHTTPTestCase):
 
@@ -127,6 +142,15 @@ class TestJupyterExtension(AsyncHTTPTestCase):
         error_msg = json.loads(response.body.decode())
         assert error_msg["message"].startswith(
             "TensorBoard instance not found:")
+
+        body, content_type = encode_multipart_formdata({'tag':'loss', 'runs':['.']}) # post data
+        response = self.fetch(
+             self.get_url(('/tensorboard/1/data/plugin/scalars/scalars_multirun')) ,
+             method='POST',
+             body=body,
+             headers={'Content-Type': content_type})
+        assert response.code == 200
+        
 
     # TODO MAYBE fix reload test
     def _test_instance_reload(self):
